@@ -21,8 +21,7 @@ export default function Home() {
     responsavel: '',
     judicial: 0,
     administrativo: 0,
-    parceiro_nome: '',
-    parceiro_quantidade: 0,
+    parceiros: [{ nome: '', quantidade: 0 }],
     ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
   });
   const [loading, setLoading] = useState(false);
@@ -37,8 +36,30 @@ export default function Home() {
   };
 
   const total = useMemo(() => {
-    return atendimentosTipos.reduce((sum, tipo) => sum + (parseInt(formData[tipo.id]) || 0), 0);
+    return atendimentosTipos.reduce((acc, tipo) => acc + (parseInt(formData[tipo.id]) || 0), 0);
   }, [formData]);
+
+  const handleAddParceiro = () => {
+    setFormData(prev => ({
+      ...prev,
+      parceiros: [...prev.parceiros, { nome: '', quantidade: 0 }]
+    }));
+  };
+
+  const handleParceiroChange = (index, field, value) => {
+    setFormData(prev => {
+      const newParceiros = [...prev.parceiros];
+      newParceiros[index][field] = field === 'quantidade' ? (parseInt(value) || 0) : value;
+      return { ...prev, parceiros: newParceiros };
+    });
+  };
+
+  const handleRemoveParceiro = (index) => {
+    setFormData(prev => {
+      const newParceiros = prev.parceiros.filter((_, i) => i !== index);
+      return { ...prev, parceiros: newParceiros };
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,8 +79,7 @@ export default function Home() {
           responsavel: '',
           judicial: 0,
           administrativo: 0,
-          parceiro_nome: '',
-          parceiro_quantidade: 0,
+          parceiros: [{ nome: '', quantidade: 0 }],
           ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
         });
       } else {
@@ -190,29 +210,41 @@ export default function Home() {
           </h3>
 
           <div className="glass-card" style={{ marginBottom: '2rem', border: '1px solid #ffd54f' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }} className="grid-2-col">
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Nome do Parceiro</label>
-                <input 
-                  type="text" 
-                  name="parceiro_nome" 
-                  className="form-input" 
-                  value={formData.parceiro_nome} 
-                  onChange={handleInputChange} 
-                  placeholder="Ex: Tribunal de Justiça"
-                />
+            {formData.parceiros.map((parceiro, index) => (
+              <div key={index} style={{ marginBottom: index !== formData.parceiros.length - 1 ? '1.5rem' : '0', paddingBottom: index !== formData.parceiros.length - 1 ? '1.5rem' : '0', borderBottom: index !== formData.parceiros.length - 1 ? '1px dashed #ffd54f' : 'none' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }} className="grid-2-col">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Nome do Parceiro {index + 1}</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={parceiro.nome} 
+                      onChange={(e) => handleParceiroChange(index, 'nome', e.target.value)} 
+                      placeholder="Ex: Tribunal de Justiça"
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Quantidade</label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      className="form-input" 
+                      value={parceiro.quantidade || ''} 
+                      onChange={(e) => handleParceiroChange(index, 'quantidade', e.target.value)} 
+                    />
+                  </div>
+                </div>
+                {formData.parceiros.length > 1 && (
+                  <button type="button" onClick={() => handleRemoveParceiro(index)} style={{ marginTop: '0.5rem', color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    Remover Parceiro
+                  </button>
+                )}
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Quantidade</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  name="parceiro_quantidade" 
-                  className="form-input" 
-                  value={formData.parceiro_quantidade || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
+            ))}
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <button type="button" onClick={handleAddParceiro} className="btn" style={{ backgroundColor: '#fff3e0', color: '#e65100', border: '1px solid #ffd54f' }}>
+                + Adicionar Outro Parceiro
+              </button>
             </div>
           </div>
 

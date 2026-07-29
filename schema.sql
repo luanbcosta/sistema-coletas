@@ -17,6 +17,7 @@ CREATE TABLE coletas (
   outras_demandas INTEGER DEFAULT 0,
   parceiro_nome TEXT,
   parceiro_quantidade INTEGER DEFAULT 0,
+  parceiros_dados TEXT,
   total INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
