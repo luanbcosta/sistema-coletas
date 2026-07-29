@@ -3,8 +3,6 @@
 import { useState, useMemo } from 'react';
 
 const atendimentosTipos = [
-  { id: 'judicial', label: 'Judicial' },
-  { id: 'administrativo', label: 'Administrativo' },
   { id: 'orientacao_consulta', label: 'Orientação/Consulta Processual' },
   { id: 'acordos', label: 'Acordos' },
   { id: 'segunda_via', label: '2ª Via' },
@@ -21,6 +19,8 @@ export default function Home() {
     acao_social: '',
     data_coleta: new Date().toISOString().split('T')[0],
     responsavel: '',
+    judicial: 0,
+    administrativo: 0,
     ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
   });
   const [loading, setLoading] = useState(false);
@@ -54,6 +54,8 @@ export default function Home() {
           acao_social: '',
           data_coleta: new Date().toISOString().split('T')[0],
           responsavel: '',
+          judicial: 0,
+          administrativo: 0,
           ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
         });
       } else {
@@ -143,6 +145,41 @@ export default function Home() {
           <div className="total-display">
             Total de Atendimentos: {total}
           </div>
+
+          <h3 className="mt-4 mb-4" style={{ textAlign: 'center', backgroundColor: '#e0f2f1', color: 'var(--primary-green)', padding: '0.5rem', borderRadius: '8px' }}>
+            Atendimentos Separados
+          </h3>
+
+          <table className="premium-table quantities-table mb-4">
+            <tbody>
+              <tr>
+                <td>Judicial</td>
+                <td>
+                  <input 
+                    type="number" 
+                    min="0"
+                    name="judicial" 
+                    className="form-input" 
+                    value={formData.judicial || ''} 
+                    onChange={handleInputChange} 
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Administrativo</td>
+                <td>
+                  <input 
+                    type="number" 
+                    min="0"
+                    name="administrativo" 
+                    className="form-input" 
+                    value={formData.administrativo || ''} 
+                    onChange={handleInputChange} 
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
           <button type="submit" className="btn btn-success" disabled={loading}>
             {loading ? 'Salvando...' : 'Registrar Coleta'}
