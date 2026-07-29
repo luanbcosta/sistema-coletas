@@ -32,14 +32,15 @@ export async function POST(request) {
         acao_social, data_coleta, responsavel, judicial, administrativo, 
         orientacao_consulta, acordos, segunda_via, retificacao, restauracao, 
         registro_tardio, reconhecimento_paternidade, demandas_familia, 
-        outras_demandas, total
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        outras_demandas, parceiro_nome, parceiro_quantidade, total
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       data.acao_social, data.data_coleta, data.responsavel,
       data.judicial || 0, data.administrativo || 0, data.orientacao_consulta || 0,
       data.acordos || 0, data.segunda_via || 0, data.retificacao || 0,
       data.restauracao || 0, data.registro_tardio || 0, data.reconhecimento_paternidade || 0,
-      data.demandas_familia || 0, data.outras_demandas || 0, data.total || 0
+      data.demandas_familia || 0, data.outras_demandas || 0, 
+      data.parceiro_nome || '', data.parceiro_quantidade || 0, data.total || 0
     );
 
     const result = await stmt.run();

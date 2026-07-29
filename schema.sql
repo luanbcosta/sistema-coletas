@@ -15,6 +15,8 @@ CREATE TABLE coletas (
   reconhecimento_paternidade INTEGER DEFAULT 0,
   demandas_familia INTEGER DEFAULT 0,
   outras_demandas INTEGER DEFAULT 0,
+  parceiro_nome TEXT,
+  parceiro_quantidade INTEGER DEFAULT 0,
   total INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

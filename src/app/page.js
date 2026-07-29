@@ -21,6 +21,8 @@ export default function Home() {
     responsavel: '',
     judicial: 0,
     administrativo: 0,
+    parceiro_nome: '',
+    parceiro_quantidade: 0,
     ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
   });
   const [loading, setLoading] = useState(false);
@@ -56,6 +58,8 @@ export default function Home() {
           responsavel: '',
           judicial: 0,
           administrativo: 0,
+          parceiro_nome: '',
+          parceiro_quantidade: 0,
           ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
         });
       } else {
@@ -180,6 +184,37 @@ export default function Home() {
               </tr>
             </tbody>
           </table>
+
+          <h3 className="mt-4 mb-4" style={{ textAlign: 'center', backgroundColor: '#fff3e0', color: '#e65100', padding: '0.5rem', borderRadius: '8px' }}>
+            Parceiros (Opcional)
+          </h3>
+
+          <div className="glass-card" style={{ marginBottom: '2rem', border: '1px solid #ffd54f' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }} className="grid-2-col">
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Nome do Parceiro</label>
+                <input 
+                  type="text" 
+                  name="parceiro_nome" 
+                  className="form-input" 
+                  value={formData.parceiro_nome} 
+                  onChange={handleInputChange} 
+                  placeholder="Ex: Tribunal de Justiça"
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Quantidade</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  name="parceiro_quantidade" 
+                  className="form-input" 
+                  value={formData.parceiro_quantidade || ''} 
+                  onChange={handleInputChange} 
+                />
+              </div>
+            </div>
+          </div>
 
           <button type="submit" className="btn btn-success" disabled={loading}>
             {loading ? 'Salvando...' : 'Registrar Coleta'}
