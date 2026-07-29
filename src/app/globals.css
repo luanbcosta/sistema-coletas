@@ -255,3 +255,12 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.1rem;
   }
 }
+
+/* Fix para o campo de data não vazar a tela no celular (iOS Safari) */
+input[type="date"] {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  display: block;
+  box-sizing: border-box;
+}
