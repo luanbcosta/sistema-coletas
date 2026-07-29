@@ -1,0 +1,8 @@
+name = "sistema-coletas"
+compatibility_date = "2024-03-20"
+pages_build_output_dir = ".vercel/output/static"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "coletas-db"
+database_id = "07422ae1-e2f3-4d6e-ad4c-ec029a3338ba"

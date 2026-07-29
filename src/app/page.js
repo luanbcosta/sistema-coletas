@@ -1,65 +1,154 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useMemo } from 'react';
+
+const atendimentosTipos = [
+  { id: 'judicial', label: 'Judicial' },
+  { id: 'administrativo', label: 'Administrativo' },
+  { id: 'orientacao_consulta', label: 'Orientação/Consulta Processual' },
+  { id: 'acordos', label: 'Acordos' },
+  { id: 'segunda_via', label: '2ª Via' },
+  { id: 'retificacao', label: 'Retificação/Alteração' },
+  { id: 'restauracao', label: 'Restauração' },
+  { id: 'registro_tardio', label: 'Registro Tardio' },
+  { id: 'reconhecimento_paternidade', label: 'Reconhecimento de Paternidade' },
+  { id: 'demandas_familia', label: 'Demandas de Família em geral' },
+  { id: 'outras_demandas', label: 'Outras Demandas' }
+];
 
 export default function Home() {
+  const [formData, setFormData] = useState({
+    acao_social: '',
+    data_coleta: new Date().toISOString().split('T')[0],
+    responsavel: '',
+    ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  const handleInputChange = (e) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? (parseInt(value) || 0) : value
+    }));
+  };
+
+  const total = useMemo(() => {
+    return atendimentosTipos.reduce((sum, tipo) => sum + (parseInt(formData[tipo.id]) || 0), 0);
+  }, [formData]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    try {
+      const response = await fetch('/api/coletas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, total })
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Coleta registrada com sucesso!' });
+        setFormData({
+          acao_social: '',
+          data_coleta: new Date().toISOString().split('T')[0],
+          responsavel: '',
+          ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
+        });
+      } else {
+        const err = await response.json();
+        setMessage({ type: 'error', text: err.error || 'Erro ao registrar coleta.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erro de conexão.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="container" style={{ paddingBottom: '3rem' }}>
+      <div className="glass-card">
+        <h1 className="text-center mb-4" style={{ color: 'var(--primary-green)' }}>
+          Formulário de Coleta de Atendimentos
+        </h1>
+
+        {message && (
+          <div style={{
+            padding: '1rem', marginBottom: '1rem', borderRadius: '8px',
+            backgroundColor: message.type === 'success' ? '#dcfce7' : '#fee2e2',
+            color: message.type === 'success' ? '#166534' : '#991b1b'
+          }}>
+            {message.text}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label">Ação Social</label>
+              <input 
+                type="text" name="acao_social" className="form-input" 
+                value={formData.acao_social} onChange={handleInputChange} required 
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Data</label>
+              <input 
+                type="date" name="data_coleta" className="form-input" 
+                value={formData.data_coleta} onChange={handleInputChange} required 
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Responsável pela Coleta</label>
+            <input 
+              type="text" name="responsavel" className="form-input" 
+              value={formData.responsavel} onChange={handleInputChange} required 
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          </div>
+
+          <h3 className="mt-4 mb-4" style={{ textAlign: 'center', backgroundColor: '#f3f4f6', padding: '0.5rem', borderRadius: '8px' }}>
+            Número Total de Atendimentos DPE
+          </h3>
+
+          <table className="premium-table quantities-table">
+            <thead>
+              <tr>
+                <th>Tipos de Atendimentos</th>
+                <th style={{ textAlign: 'center' }}>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {atendimentosTipos.map(tipo => (
+                <tr key={tipo.id}>
+                  <td>{tipo.label}</td>
+                  <td>
+                    <input 
+                      type="number" 
+                      min="0"
+                      name={tipo.id} 
+                      className="form-input" 
+                      value={formData[tipo.id] || ''} 
+                      onChange={handleInputChange} 
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="total-display">
+            Total de Atendimentos: {total}
+          </div>
+
+          <button type="submit" className="btn btn-success" disabled={loading}>
+            {loading ? 'Salvando...' : 'Registrar Coleta'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
