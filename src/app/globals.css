@@ -264,3 +264,27 @@ input[type="date"] {
   display: block;
   box-sizing: border-box;
 }
+
+/* Estilos de Impressão */
+@media print {
+  .no-print, .header {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    padding: 0 !important;
+  }
+  
+  .container {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  .glass-card {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+}

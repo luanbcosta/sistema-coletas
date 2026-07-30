@@ -35,7 +35,12 @@ export default function Dashboard() {
       </div>
 
       <div className="glass-card">
-        <h2 className="mb-4">Histórico de Coletas</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h2 className="mb-0">Histórico de Coletas</h2>
+          <button onClick={() => window.print()} className="btn no-print" style={{ backgroundColor: '#4b5563', padding: '0.5rem 1rem', width: 'auto' }}>
+            🖨️ Imprimir Relatório
+          </button>
+        </div>
         
         {loading ? (
           <p className="text-center text-light">Carregando...</p>
