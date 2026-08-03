@@ -1,25 +1,26 @@
-export async function onRequestGet(context) {
-  try {
-    const { env } = context;
-    if (!env.DB) {
-      return new Response(JSON.stringify({ error: "Banco de dados D1 no encontrado." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-    }
+'use server';
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
+
+export async function fetchColetas() {
+  try {
+    const { env } = getRequestContext();
+    if (!env.DB) {
+      throw new Error("Banco de dados D1 no encontrado.");
+    }
     const { results } = await env.DB.prepare('SELECT * FROM coletas ORDER BY created_at DESC').all();
-    
-    return new Response(JSON.stringify(results || []), { headers: { 'Content-Type': 'application/json' } });
+    return results || [];
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    console.error('fetchColetas Error:', error);
+    return [];
   }
 }
 
-export async function onRequestPost(context) {
+export async function saveColeta(data) {
   try {
-    const { request, env } = context;
-    const data = await request.json();
-    
+    const { env } = getRequestContext();
     if (!env.DB) {
-      return new Response(JSON.stringify({ error: "Banco de dados D1 no encontrado." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      throw new Error("Banco de dados D1 no encontrado.");
     }
 
     const stmt = env.DB.prepare(`
@@ -40,9 +41,9 @@ export async function onRequestPost(context) {
     );
 
     const result = await stmt.run();
-
-    return new Response(JSON.stringify({ success: true, meta: result.meta }), { headers: { 'Content-Type': 'application/json' } });
+    return { success: true };
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    console.error('saveColeta Error:', error);
+    throw new Error(error.message);
   }
 }

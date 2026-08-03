@@ -1,26 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { fetchColetas } from '../actions';
 
 export default function Dashboard() {
   const [coletas, setColetas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchColetas() {
+    async function loadData() {
       try {
-        const res = await fetch('/api/coletas');
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setColetas(data);
-        }
+        const data = await fetchColetas();
+        setColetas(data);
       } catch (err) {
-        console.error('Error fetching coletas', err);
+        setError('Erro ao carregar dados: ' + err.message);
       } finally {
         setLoading(false);
       }
     }
-    fetchColetas();
+    loadData();
   }, []);
 
   const totalGeral = coletas.reduce((sum, c) => sum + c.total, 0);
