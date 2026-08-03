@@ -1,9 +1,6 @@
 import './globals.css';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
-
 export const metadata = {
   title: 'Registro de Coletas - Defensoria Pública',
   description: 'Sistema de coleta de atendimentos',
