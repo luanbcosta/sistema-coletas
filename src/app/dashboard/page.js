@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchColetas } from '../actions';
 
 export default function Dashboard() {
   const [coletas, setColetas] = useState([]);
@@ -11,7 +10,9 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadData() {
       try {
-        const data = await fetchColetas();
+        const res = await fetch('/api/coletas');
+        if (!res.ok) throw new Error('Falha ao carregar dados');
+        const data = await res.json();
         setColetas(data);
       } catch (err) {
         setError('Erro ao carregar dados: ' + err.message);

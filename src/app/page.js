@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { saveColeta } from './actions';
 
 const atendimentosTipos = [
   { id: 'orientacao_consulta', label: 'Orientação/Consulta Processual' },
@@ -72,8 +71,15 @@ export default function Home() {
     setLoading(true);
     setMessage(null);
     try {
-      const result = await saveColeta({ ...formData, total });
-      if (result.success) {
+      const response = await fetch('/api/coletas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...formData, total })
+      });
+
+      if (response.ok) {
         setMessage({ type: 'success', text: 'Coleta registrada com sucesso!' });
         setFormData({
           acao_social: '',
@@ -85,7 +91,8 @@ export default function Home() {
           ...atendimentosTipos.reduce((acc, tipo) => ({ ...acc, [tipo.id]: 0 }), {})
         });
       } else {
-        setMessage({ type: 'error', text: result.error || 'Erro ao registrar coleta.' });
+        const errorData = await response.json();
+        setMessage({ type: 'error', text: errorData.error || 'Erro ao registrar coleta.' });
       }
     } catch (err) {
       setMessage({ type: 'error', text: 'Erro de conexão.' });
