@@ -92,7 +92,7 @@ export default function ColetaForm({ initialData = null, onSuccess = () => {} })
     setLoading(true);
     setMessage(null);
     try {
-      const url = isEditing ? \/api/coletas/\\ : '/api/coletas';
+      const url = isEditing ? `/api/coletas/${initialData.id}` : '/api/coletas';
       const method = isEditing ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

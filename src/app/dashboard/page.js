@@ -56,7 +56,7 @@ export default function Dashboard() {
     
     setDeleting(true);
     try {
-      const res = await fetch(\/api/coletas/\\, { method: 'DELETE' });
+      const res = await fetch(`/api/coletas/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Falha ao excluir');
       
       // Refresh list
@@ -148,7 +148,7 @@ export default function Dashboard() {
                   />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
-                      <Cell key={\cell-\\} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Bar>
                 </BarChart>
