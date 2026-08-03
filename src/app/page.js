@@ -76,7 +76,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...formData, total })
+        body: JSON.stringify({ ...formData, total: totalGeral })
       });
 
       if (response.ok) {
