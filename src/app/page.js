@@ -41,8 +41,8 @@ export default function Home() {
 
   const totalGeral = useMemo(() => {
     const parceirosTotal = formData.parceiros.reduce((sum, p) => sum + (parseInt(p.quantidade) || 0), 0);
-    return total + (parseInt(formData.judicial) || 0) + (parseInt(formData.administrativo) || 0) + parceirosTotal;
-  }, [total, formData.judicial, formData.administrativo, formData.parceiros]);
+    return total + parceirosTotal;
+  }, [total, formData.parceiros]);
 
   const handleAddParceiro = () => {
     setFormData(prev => ({
