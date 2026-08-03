@@ -1,13 +1,8 @@
-import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
-
-export const runtime = 'edge';
-
-export async function GET(request) {
+export async function onRequestGet(context) {
   try {
-    const { env } = getRequestContext();
+    const { env } = context;
     if (!env.DB) {
-      return new Response(JSON.stringify({ error: "Banco de dados D1 não encontrado." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: "Banco de dados D1 no encontrado." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
     const { results } = await env.DB.prepare('SELECT * FROM coletas ORDER BY created_at DESC').all();
@@ -18,13 +13,13 @@ export async function GET(request) {
   }
 }
 
-export async function POST(request) {
+export async function onRequestPost(context) {
   try {
+    const { request, env } = context;
     const data = await request.json();
-    const { env } = getRequestContext();
     
     if (!env.DB) {
-      return new Response(JSON.stringify({ error: "Banco de dados D1 não encontrado." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: "Banco de dados D1 no encontrado." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
     const stmt = env.DB.prepare(`
