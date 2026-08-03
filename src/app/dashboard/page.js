@@ -129,28 +129,6 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           </div>
-
-          <h3 style={{ color: 'var(--primary-blue)', marginBottom: '1rem', marginTop: '2rem' }}>Resumo Geral por Tipo</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-            <div className="glass-card" style={{ padding: '1rem', textAlign: 'center', borderLeft: '4px solid #f59e0b' }}>
-              <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '0.5rem' }}>Judicial</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>{breakdown.judicial}</div>
-            </div>
-            <div className="glass-card" style={{ padding: '1rem', textAlign: 'center', borderLeft: '4px solid #f59e0b' }}>
-              <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '0.5rem' }}>Administrativo</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>{breakdown.administrativo}</div>
-            </div>
-            {atendimentosTipos.map(tipo => (
-              <div key={tipo.id} className="glass-card" style={{ padding: '1rem', textAlign: 'center', borderLeft: '4px solid var(--primary-green)' }}>
-                <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '0.5rem' }}>{tipo.label}</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>{breakdown[tipo.id]}</div>
-              </div>
-            ))}
-            <div className="glass-card" style={{ padding: '1rem', textAlign: 'center', borderLeft: '4px solid #3b82f6' }}>
-              <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '0.5rem' }}>Parceiros</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>{breakdown.parceiros}</div>
-            </div>
-          </div>
         </div>
       )}
 
