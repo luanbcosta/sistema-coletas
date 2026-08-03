@@ -1,3 +1,5 @@
 import { NextResponse } from 'next/server';
 export const runtime = 'edge';
-export async function GET() { return NextResponse.json({ status: 'ok' }); }
+export async function GET() { 
+  return new Response(JSON.stringify({ status: 'ok' }), { headers: { 'Content-Type': 'application/json' } }); 
+}

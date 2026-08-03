@@ -7,14 +7,14 @@ export async function GET(request) {
   try {
     const { env } = getRequestContext();
     if (!env.DB) {
-      return NextResponse.json({ error: "Banco de dados D1 não encontrado." }, { status: 500 });
+      return new Response(JSON.stringify({ error: "Banco de dados D1 não encontrado." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
     const { results } = await env.DB.prepare('SELECT * FROM coletas ORDER BY created_at DESC').all();
     
-    return NextResponse.json(results || []);
+    return new Response(JSON.stringify(results || []), { headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
 
@@ -24,7 +24,7 @@ export async function POST(request) {
     const { env } = getRequestContext();
     
     if (!env.DB) {
-      return NextResponse.json({ error: "Banco de dados D1 não encontrado." }, { status: 500 });
+      return new Response(JSON.stringify({ error: "Banco de dados D1 não encontrado." }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
     const stmt = env.DB.prepare(`
@@ -46,8 +46,8 @@ export async function POST(request) {
 
     const result = await stmt.run();
 
-    return NextResponse.json({ success: true, meta: result.meta });
+    return new Response(JSON.stringify({ success: true, meta: result.meta }), { headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
