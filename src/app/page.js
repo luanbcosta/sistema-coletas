@@ -39,6 +39,11 @@ export default function Home() {
     return atendimentosTipos.reduce((acc, tipo) => acc + (parseInt(formData[tipo.id]) || 0), 0);
   }, [formData]);
 
+  const totalGeral = useMemo(() => {
+    const parceirosTotal = formData.parceiros.reduce((sum, p) => sum + (parseInt(p.quantidade) || 0), 0);
+    return total + (parseInt(formData.judicial) || 0) + (parseInt(formData.administrativo) || 0) + parceirosTotal;
+  }, [total, formData.judicial, formData.administrativo, formData.parceiros]);
+
   const handleAddParceiro = () => {
     setFormData(prev => ({
       ...prev,
@@ -251,6 +256,10 @@ export default function Home() {
                 + Adicionar Outro Parceiro
               </button>
             </div>
+          </div>
+
+          <div className="total-display" style={{ backgroundColor: '#f3f4f6', borderColor: '#9ca3af', color: '#374151', marginBottom: '1.5rem', textAlign: 'center', fontSize: '1.5rem' }}>
+            SOMATÓRIO GERAL (Tudo): {totalGeral}
           </div>
 
           <button type="submit" className="btn btn-success" disabled={loading}>
