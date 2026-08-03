@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import ColetaForm from '../components/ColetaForm';
+import ColetaForm from '../../components/ColetaForm';
 
 const atendimentosTipos = [
   { id: 'orientacao_consulta', label: 'Orientação/Consulta Processual' },
