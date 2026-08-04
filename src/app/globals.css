@@ -266,7 +266,38 @@ input[type="date"] {
 }
 
 /* Estilos de Impressão */
-@media print {
+@media print {  
+  body.printing-modal {
+    background: white !important;
+  }
+  
+  body.printing-modal .container > .glass-card, 
+  body.printing-modal .container > .mb-4 {
+    display: none !important;
+  }
+  
+  body.printing-modal .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    display: block;
+    align-items: flex-start;
+  }
+  
+  body.printing-modal .modal-content {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  body.printing-modal .modal-close {
+    display: none !important;
+  }
   .no-print, .header {
     display: none !important;
   }
@@ -351,3 +382,4 @@ input[type="date"] {
 .clickable-row:hover {
   background-color: #f3f4f6;
 }
+

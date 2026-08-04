@@ -69,6 +69,15 @@ export default function Dashboard() {
     }
   };
 
+  const printModal = () => {
+    document.body.classList.add('printing-modal');
+    window.print();
+    // Use setTimeout so the class isn't removed before the print dialog captures the layout
+    setTimeout(() => {
+      document.body.classList.remove('printing-modal');
+    }, 500);
+  };
+
   const handleEditSuccess = () => {
     fetchDados();
     setSelectedColeta(null);
@@ -222,7 +231,10 @@ export default function Dashboard() {
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <h2 style={{ color: 'var(--primary-blue)', margin: 0 }}>Detalhes da Coleta</h2>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem' }} className="no-print">
+                    <button onClick={printModal} className="btn" style={{ backgroundColor: '#10b981', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
+                      🖨️ PDF
+                    </button>
                     <button onClick={() => setIsEditingMode(true)} className="btn" style={{ backgroundColor: '#f59e0b', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
                       ✏️ Editar
                     </button>
@@ -280,7 +292,7 @@ export default function Dashboard() {
                   </>
                 )}
                 
-                <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+                <div style={{ marginTop: '2rem', textAlign: 'right' }} className="no-print">
                   <button className="btn" style={{ width: 'auto', backgroundColor: '#4b5563' }} onClick={() => setSelectedColeta(null)}>
                     Fechar
                   </button>
