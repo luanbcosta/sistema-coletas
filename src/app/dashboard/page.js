@@ -292,6 +292,11 @@ export default function Dashboard() {
                   </>
                 )}
                 
+                <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#e0f2f1', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong style={{ color: 'var(--primary-green)', fontSize: '1.1rem' }}>Total Somado:</strong>
+                  <strong style={{ color: 'var(--primary-blue)', fontSize: '1.3rem' }}>{selectedColeta.total}</strong>
+                </div>
+                
                 <div style={{ marginTop: '2rem', textAlign: 'right' }} className="no-print">
                   <button className="btn" style={{ width: 'auto', backgroundColor: '#4b5563' }} onClick={() => setSelectedColeta(null)}>
                     Fechar
