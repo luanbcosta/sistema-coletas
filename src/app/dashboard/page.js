@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   BarChart,
   Bar,
@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [selectedColeta, setSelectedColeta] = useState(null);
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchDados = async () => {
     try {
@@ -56,7 +57,7 @@ export default function Dashboard() {
     
     setDeleting(true);
     try {
-      const res = await fetch(`/api/coletas/${id}`, { method: 'DELETE' });
+      const res = await fetch(\/api/coletas/\\, { method: 'DELETE' });
       if (!res.ok) throw new Error('Falha ao excluir');
       
       // Refresh list
@@ -82,6 +83,64 @@ export default function Dashboard() {
     fetchDados();
     setSelectedColeta(null);
     setIsEditingMode(false);
+  };
+
+  const handleExportBackup = () => {
+    try {
+      const backupData = JSON.stringify(coletas, null, 2);
+      const blob = new Blob([backupData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = \ackup_coletas_\.json\;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Erro ao gerar backup: ' + err.message);
+    }
+  };
+
+  const handleImportBackup = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (!Array.isArray(data)) throw new Error("Formato inválido. O arquivo deve conter uma lista de coletas.");
+        if (!window.confirm(\Você está prestes a restaurar \ coletas. Para evitar dados duplicados, importe apenas se o sistema estiver vazio ou dados estiverem faltando. Continuar?\)) return;
+        
+        setLoading(true);
+        let restoredCount = 0;
+        for (const item of data) {
+          const { id, created_at, ...payload } = item;
+          if (payload.parceiros_dados) {
+             try { payload.parceiros = JSON.parse(payload.parceiros_dados); } 
+             catch(e) { payload.parceiros = []; }
+          } else {
+             payload.parceiros = [];
+          }
+          
+          const res = await fetch('/api/coletas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if(res.ok) restoredCount++;
+        }
+        alert(\Restauração concluída! \ coletas importadas.\);
+        fetchDados();
+      } catch (err) {
+        alert('Erro ao importar backup: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; 
   };
 
   const totalGeral = coletas.reduce((sum, c) => sum + c.total, 0);
@@ -157,7 +216,7 @@ export default function Dashboard() {
                   />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={\cell-\\} fill={entry.color} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -173,9 +232,24 @@ export default function Dashboard() {
             <h2 className="mb-0">Histórico de Coletas</h2>
             <p className="text-light" style={{ fontSize: '0.9rem', marginTop: '0.2rem' }}>Clique em uma linha para ver os detalhes daquela coleta</p>
           </div>
-          <button onClick={() => window.print()} className="btn no-print" style={{ backgroundColor: '#4b5563', padding: '0.5rem 1rem', width: 'auto' }}>
-            🖨️ Imprimir Relatório
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} className="no-print">
+            <input 
+              type="file" 
+              accept=".json" 
+              style={{ display: 'none' }} 
+              ref={fileInputRef} 
+              onChange={handleImportBackup} 
+            />
+            <button onClick={() => fileInputRef.current.click()} className="btn" style={{ backgroundColor: '#f59e0b', padding: '0.5rem 1rem', width: 'auto' }}>
+              ⬆️ Restaurar Backup
+            </button>
+            <button onClick={handleExportBackup} className="btn" style={{ backgroundColor: '#10b981', padding: '0.5rem 1rem', width: 'auto' }}>
+              📥 Salvar Backup
+            </button>
+            <button onClick={() => window.print()} className="btn" style={{ backgroundColor: '#4b5563', padding: '0.5rem 1rem', width: 'auto' }}>
+              🖨️ Imprimir
+            </button>
+          </div>
         </div>
         
         {loading ? (
