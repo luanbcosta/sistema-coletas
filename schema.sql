@@ -1,8 +1,7 @@
-DROP TABLE IF EXISTS coletas;
-CREATE TABLE coletas (
+CREATE TABLE IF NOT EXISTS coletas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   acao_social TEXT NOT NULL,
-  data_coleta TEXT NOT NULL,
+  data_coleta DATE NOT NULL,
   responsavel TEXT NOT NULL,
   judicial INTEGER DEFAULT 0,
   administrativo INTEGER DEFAULT 0,

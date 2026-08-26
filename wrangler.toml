@@ -5,5 +5,5 @@ pages_build_output_dir = "out"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "coletas-db"
-database_id = "07422ae1-e2f3-4d6e-ad4c-ec029a3338ba"
+database_name = "coletas"
+database_id = "fd04147f-1047-438e-b5d6-76b9bfa92061"
