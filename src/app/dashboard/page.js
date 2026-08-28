@@ -57,7 +57,7 @@ export default function Dashboard() {
     
     setDeleting(true);
     try {
-      const res = await fetch(\/api/coletas/\\, { method: 'DELETE' });
+      const res = await fetch(`/api/coletas/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Falha ao excluir');
       
       // Refresh list
@@ -92,7 +92,7 @@ export default function Dashboard() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = \ackup_coletas_\.json\;
+      a.download = `backup_coletas_${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -111,7 +111,7 @@ export default function Dashboard() {
       try {
         const data = JSON.parse(event.target.result);
         if (!Array.isArray(data)) throw new Error("Formato inválido. O arquivo deve conter uma lista de coletas.");
-        if (!window.confirm(\Você está prestes a restaurar \ coletas. Para evitar dados duplicados, importe apenas se o sistema estiver vazio ou dados estiverem faltando. Continuar?\)) return;
+        if (!window.confirm(`Você está prestes a restaurar ${data.length} coletas. Para evitar dados duplicados, importe apenas se o sistema estiver vazio ou dados estiverem faltando. Continuar?`)) return;
         
         setLoading(true);
         let restoredCount = 0;
@@ -131,7 +131,7 @@ export default function Dashboard() {
           });
           if(res.ok) restoredCount++;
         }
-        alert(\Restauração concluída! \ coletas importadas.\);
+        alert(`Restauração concluída! ${restoredCount} coletas importadas.`);
         fetchDados();
       } catch (err) {
         alert('Erro ao importar backup: ' + err.message);
@@ -216,7 +216,7 @@ export default function Dashboard() {
                   />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
-                      <Cell key={\cell-\\} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Bar>
                 </BarChart>
