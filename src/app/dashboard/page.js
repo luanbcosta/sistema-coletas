@@ -27,10 +27,13 @@ const atendimentosTipos = [
 
 export default function Dashboard() {
   const [coletas, setColetas] = useState([]);
+  const [acoesAgrupadas, setAcoesAgrupadas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedColeta, setSelectedColeta] = useState(null);
+  const [selectedAcao, setSelectedAcao] = useState(null); // The grouped action being viewed
+  const [selectedParcial, setSelectedParcial] = useState(null); // A specific day's partial being viewed/edited
   const [isEditingMode, setIsEditingMode] = useState(false);
+  const [isAddingMode, setIsAddingMode] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -41,6 +44,38 @@ export default function Dashboard() {
       if (!res.ok) throw new Error('Falha ao carregar dados');
       const data = await res.json();
       setColetas(data);
+      
+      // Agrupar por acao_social
+      const grupos = {};
+      data.forEach(c => {
+         const key = c.acao_social;
+         if(!grupos[key]) {
+            grupos[key] = {
+               acao_social: key,
+               responsavel: c.responsavel,
+               dias: [],
+               total: 0
+            };
+         }
+         grupos[key].dias.push(c);
+         grupos[key].total += c.total;
+      });
+      // Order groups by latest date of its partials
+      const groupedArray = Object.values(grupos).map(g => {
+         g.dias.sort((a,b) => new Date(b.data_coleta) - new Date(a.data_coleta));
+         g.ultima_data = g.dias[0].data_coleta;
+         return g;
+      });
+      groupedArray.sort((a,b) => new Date(b.ultima_data) - new Date(a.ultima_data));
+      setAcoesAgrupadas(groupedArray);
+
+      // Refresh selected action if it was open
+      if(selectedAcao) {
+         const updatedAcao = groupedArray.find(a => a.acao_social === selectedAcao.acao_social);
+         if(updatedAcao) setSelectedAcao(updatedAcao);
+         else setSelectedAcao(null); // was deleted completely
+      }
+
     } catch (err) {
       setError('Erro ao carregar dados: ' + err.message);
     } finally {
@@ -52,17 +87,16 @@ export default function Dashboard() {
     fetchDados();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta coleta? Essa ação não pode ser desfeita.')) return;
+  const handleDeleteParcial = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir o registro deste dia? Essa ação não pode ser desfeita.')) return;
     
     setDeleting(true);
     try {
       const res = await fetch(`/api/coletas/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Falha ao excluir');
       
-      // Refresh list
       await fetchDados();
-      setSelectedColeta(null);
+      setSelectedParcial(null);
     } catch (err) {
       alert(err.message);
     } finally {
@@ -73,7 +107,6 @@ export default function Dashboard() {
   const printModal = () => {
     document.body.classList.add('printing-modal');
     window.print();
-    // Use setTimeout so the class isn't removed before the print dialog captures the layout
     setTimeout(() => {
       document.body.classList.remove('printing-modal');
     }, 500);
@@ -81,8 +114,9 @@ export default function Dashboard() {
 
   const handleEditSuccess = () => {
     fetchDados();
-    setSelectedColeta(null);
+    setSelectedParcial(null);
     setIsEditingMode(false);
+    setIsAddingMode(false);
   };
 
   const handleExportBackup = () => {
@@ -119,7 +153,7 @@ export default function Dashboard() {
           const { id, created_at, ...payload } = item;
           if (payload.parceiros_dados) {
              try { payload.parceiros = JSON.parse(payload.parceiros_dados); } 
-             catch(e) { payload.parceiros = []; }
+             catch(err) { payload.parceiros = []; }
           } else {
              payload.parceiros = [];
           }
@@ -131,7 +165,7 @@ export default function Dashboard() {
           });
           if(res.ok) restoredCount++;
         }
-        alert(`Restauração concluída! ${restoredCount} coletas importadas.`);
+        alert(`Restauração concluída! ${restoredCount} parciais importadas.`);
         fetchDados();
       } catch (err) {
         alert('Erro ao importar backup: ' + err.message);
@@ -229,8 +263,8 @@ export default function Dashboard() {
       <div className="glass-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h2 className="mb-0">Histórico de Coletas</h2>
-            <p className="text-light" style={{ fontSize: '0.9rem', marginTop: '0.2rem' }}>Clique em uma linha para ver os detalhes daquela coleta</p>
+            <h2 className="mb-0">Ações Sociais Registradas</h2>
+            <p className="text-light" style={{ fontSize: '0.9rem', marginTop: '0.2rem' }}>Clique em uma Ação para ver os dias registrados</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} className="no-print">
             <input 
@@ -254,29 +288,27 @@ export default function Dashboard() {
         
         {loading ? (
           <p className="text-center text-light">Carregando...</p>
-        ) : coletas.length === 0 ? (
+        ) : acoesAgrupadas.length === 0 ? (
           <p className="text-center text-light">Nenhuma coleta registrada ainda.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="premium-table">
               <thead>
                 <tr>
-                  <th>Data</th>
                   <th>Ação Social</th>
                   <th>Responsável</th>
+                  <th>Dias Registrados</th>
                   <th>Total Somado</th>
                 </tr>
               </thead>
               <tbody>
-                {coletas.map(coleta => (
-                  <tr key={coleta.id} className="clickable-row" onClick={() => { setSelectedColeta(coleta); setIsEditingMode(false); }}>
-                    <td>
-                      {new Date(coleta.data_coleta).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-                    </td>
-                    <td>{coleta.acao_social}</td>
-                    <td>{coleta.responsavel}</td>
+                {acoesAgrupadas.map((acao, idx) => (
+                  <tr key={idx} className="clickable-row" onClick={() => { setSelectedAcao(acao); }}>
+                    <td>{acao.acao_social}</td>
+                    <td>{acao.responsavel}</td>
+                    <td>{acao.dias.length} dia(s)</td>
                     <td style={{ fontWeight: 'bold', color: 'var(--primary-green)' }}>
-                      {coleta.total}
+                      {acao.total}
                     </td>
                   </tr>
                 ))}
@@ -286,15 +318,101 @@ export default function Dashboard() {
         )}
       </div>
 
-      {selectedColeta && (
-        <div className="modal-overlay" onClick={() => setSelectedColeta(null)}>
+      {/* Modal - Resumo da Ação e Lista de Dias */}
+      {selectedAcao && !selectedParcial && !isAddingMode && (
+        <div className="modal-overlay" onClick={() => setSelectedAcao(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedColeta(null)}>&times;</button>
+            <button className="modal-close" onClick={() => setSelectedAcao(null)}>&times;</button>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ color: 'var(--primary-blue)', margin: 0 }}>Resumo da Ação</h2>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.85rem', color: '#64748b' }}>Ação Social:</strong>
+                <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>{selectedAcao.acao_social}</span>
+              </div>
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.85rem', color: '#64748b' }}>Responsável:</strong>
+                <span style={{ fontSize: '1.1rem' }}>{selectedAcao.responsavel}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
+              <h4 style={{ margin: 0, color: 'var(--text-dark)' }}>Parciais (Dias Registrados)</h4>
+              <button onClick={() => setIsAddingMode(true)} className="btn no-print" style={{ backgroundColor: '#10b981', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
+                + Adicionar Novo Dia
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
+               {selectedAcao.dias.map(dia => (
+                  <div key={dia.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', border: '1px solid #e2e8f0', padding: '0.75rem 1rem', borderRadius: '6px' }}>
+                     <div>
+                        <strong style={{ color: 'var(--primary-blue)' }}>{new Date(dia.data_coleta).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong>
+                        <span style={{ marginLeft: '1rem', color: '#64748b' }}>Atendimentos: <strong style={{color: 'var(--text-dark)'}}>{dia.total}</strong></span>
+                     </div>
+                     <button onClick={() => setSelectedParcial(dia)} className="btn no-print" style={{ backgroundColor: '#3b82f6', padding: '0.3rem 0.8rem', width: 'auto', fontSize: '0.85rem' }}>
+                        Ver Parcial
+                     </button>
+                  </div>
+               ))}
+            </div>
+
+            <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#e0f2f1', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong style={{ color: 'var(--primary-green)', fontSize: '1.1rem' }}>Total Somado da Ação:</strong>
+              <strong style={{ color: 'var(--primary-blue)', fontSize: '1.5rem' }}>{selectedAcao.total}</strong>
+            </div>
+
+            <div style={{ marginTop: '2rem', textAlign: 'right' }} className="no-print">
+               <button className="btn" style={{ width: 'auto', backgroundColor: '#4b5563' }} onClick={() => setSelectedAcao(null)}>
+                 Fechar
+               </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Adicionar Parcial Específica */}
+      {isAddingMode && selectedAcao && (
+         <div className="modal-overlay" onClick={() => setIsAddingMode(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+               <button className="modal-close" onClick={() => setIsAddingMode(false)}>&times;</button>
+               <h2 style={{ color: 'var(--primary-blue)', marginBottom: '1.5rem' }}>Adicionar Parcial: {selectedAcao.acao_social}</h2>
+               <ColetaForm 
+                  onSuccess={handleEditSuccess} 
+                  initialData={{
+                     acao_social: selectedAcao.acao_social,
+                     responsavel: selectedAcao.responsavel,
+                     data_coleta: new Date().toISOString().split('T')[0],
+                     // Empty fields for the new partial
+                     judicial: 0, administrativo: 0, orientacao_consulta: 0, acordos: 0,
+                     segunda_via: 0, retificacao: 0, restauracao: 0, registro_tardio: 0,
+                     reconhecimento_paternidade: 0, demandas_familia: 0, outras_demandas: 0,
+                     parceiros: []
+                  }} 
+               />
+               <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                  <button onClick={() => setIsAddingMode(false)} style={{ background: 'none', border: 'none', color: '#6b7280', textDecoration: 'underline', cursor: 'pointer' }}>
+                     Cancelar
+                  </button>
+               </div>
+            </div>
+         </div>
+      )}
+
+      {/* Modal - Detalhes/Edição da Parcial */}
+      {selectedParcial && (
+        <div className="modal-overlay" onClick={() => { setSelectedParcial(null); setIsEditingMode(false); }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => { setSelectedParcial(null); setIsEditingMode(false); }}>&times;</button>
             
             {isEditingMode ? (
               <>
-                <h2 style={{ color: 'var(--primary-blue)', marginBottom: '1.5rem' }}>Editar Coleta</h2>
-                <ColetaForm initialData={selectedColeta} onSuccess={handleEditSuccess} />
+                <h2 style={{ color: 'var(--primary-blue)', marginBottom: '1.5rem' }}>Editar Parcial do Dia</h2>
+                <ColetaForm initialData={selectedParcial} onSuccess={handleEditSuccess} />
                 <div style={{ marginTop: '1rem', textAlign: 'center' }}>
                   <button onClick={() => setIsEditingMode(false)} style={{ background: 'none', border: 'none', color: '#6b7280', textDecoration: 'underline', cursor: 'pointer' }}>
                     Cancelar Edição
@@ -304,7 +422,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <h2 style={{ color: 'var(--primary-blue)', margin: 0 }}>Detalhes da Coleta</h2>
+                  <h2 style={{ color: 'var(--primary-blue)', margin: 0 }}>Detalhes da Parcial</h2>
                   <div style={{ display: 'flex', gap: '0.5rem' }} className="no-print">
                     <button onClick={printModal} className="btn" style={{ backgroundColor: '#10b981', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
                       🖨️ PDF
@@ -312,24 +430,24 @@ export default function Dashboard() {
                     <button onClick={() => setIsEditingMode(true)} className="btn" style={{ backgroundColor: '#f59e0b', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
                       ✏️ Editar
                     </button>
-                    <button onClick={() => handleDelete(selectedColeta.id)} disabled={deleting} className="btn" style={{ backgroundColor: '#ef4444', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
+                    <button onClick={() => handleDeleteParcial(selectedParcial.id)} disabled={deleting} className="btn" style={{ backgroundColor: '#ef4444', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
                       {deleting ? '...' : '🗑️ Excluir'}
                     </button>
                   </div>
                 </div>
                 
                 <p className="text-light" style={{ marginBottom: '1.5rem' }}>
-                  Data: {new Date(selectedColeta.data_coleta).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                  Data desta Parcial: {new Date(selectedParcial.data_coleta).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                 </p>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div>
                     <strong>Ação Social:</strong>
-                    <div>{selectedColeta.acao_social || '-'}</div>
+                    <div>{selectedParcial.acao_social || '-'}</div>
                   </div>
                   <div>
                     <strong>Responsável:</strong>
-                    <div>{selectedColeta.responsavel || '-'}</div>
+                    <div>{selectedParcial.responsavel || '-'}</div>
                   </div>
                 </div>
 
@@ -337,26 +455,26 @@ export default function Dashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b' }}>
                     <span>Judicial:</span>
-                    <strong>{selectedColeta.judicial || 0}</strong>
+                    <strong>{selectedParcial.judicial || 0}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b' }}>
                     <span>Administrativo:</span>
-                    <strong>{selectedColeta.administrativo || 0}</strong>
+                    <strong>{selectedParcial.administrativo || 0}</strong>
                   </div>
                   
                   {atendimentosTipos.map(t => (
                     <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>{t.label}:</span>
-                      <strong>{selectedColeta[t.id] || 0}</strong>
+                      <strong>{selectedParcial[t.id] || 0}</strong>
                     </div>
                   ))}
                 </div>
 
-                {getParceiros(selectedColeta).length > 0 && (
+                {getParceiros(selectedParcial).length > 0 && (
                   <>
                     <h4 style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem', marginBottom: '1rem', marginTop: '1.5rem' }}>Parceiros Envolvidos</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
-                      {getParceiros(selectedColeta).map((p, i) => (
+                      {getParceiros(selectedParcial).map((p, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#f3f4f6', padding: '0.5rem', borderRadius: '4px' }}>
                           <span>{p.nome || 'Sem Nome'}</span>
                           <strong style={{ color: 'var(--primary-blue)' }}>{p.quantidade || 0}</strong>
@@ -367,12 +485,15 @@ export default function Dashboard() {
                 )}
                 
                 <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#e0f2f1', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ color: 'var(--primary-green)', fontSize: '1.1rem' }}>Total Somado:</strong>
-                  <strong style={{ color: 'var(--primary-blue)', fontSize: '1.3rem' }}>{selectedColeta.total}</strong>
+                  <strong style={{ color: 'var(--primary-green)', fontSize: '1.1rem' }}>Total Deste Dia:</strong>
+                  <strong style={{ color: 'var(--primary-blue)', fontSize: '1.3rem' }}>{selectedParcial.total}</strong>
                 </div>
                 
-                <div style={{ marginTop: '2rem', textAlign: 'right' }} className="no-print">
-                  <button className="btn" style={{ width: 'auto', backgroundColor: '#4b5563' }} onClick={() => setSelectedColeta(null)}>
+                <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }} className="no-print">
+                  <button className="btn" style={{ width: 'auto', backgroundColor: '#64748b', padding: '0.4rem 1rem' }} onClick={() => { setSelectedParcial(null); setIsEditingMode(false); }}>
+                    ← Voltar p/ Ação
+                  </button>
+                  <button className="btn" style={{ width: 'auto', backgroundColor: '#4b5563', padding: '0.4rem 1rem' }} onClick={() => { setSelectedParcial(null); setSelectedAcao(null); }}>
                     Fechar
                   </button>
                 </div>
