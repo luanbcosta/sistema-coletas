@@ -188,7 +188,7 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
       )}
 
       <div className="form-group">
-        <label>Ação Social</label>
+        <label className="form-label">Ação Social</label>
         <input
           type="text"
           name="acao_social"
@@ -196,7 +196,7 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
           onChange={handleInputChange}
           required
           placeholder="Nome da Ação"
-          className="form-control"
+          className="form-input"
           list="acoes-list"
         />
         <datalist id="acoes-list">
@@ -205,19 +205,19 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
       </div>
 
       <div className="form-group">
-        <label>Data desta Parcial</label>
+        <label className="form-label">Data desta Parcial</label>
         <input
           type="date"
           name="data_coleta"
           value={formData.data_coleta}
           onChange={handleInputChange}
           required
-          className="form-control"
+          className="form-input"
         />
       </div>
 
       <div className="form-group">
-        <label>Responsável pela Coleta</label>
+        <label className="form-label">Responsável pela Coleta</label>
         <input
           type="text"
           name="responsavel"
@@ -225,7 +225,7 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
           onChange={handleInputChange}
           required
           placeholder="Nome do Responsável"
-          className="form-control"
+          className="form-input"
         />
       </div>
 
@@ -235,39 +235,39 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
 
       <div className="form-grid">
         <div className="form-group">
-          <label>Judicial</label>
+          <label className="form-label">Judicial</label>
           <input
             type="number"
             name="judicial"
             min="0"
             value={formData.judicial}
             onChange={handleInputChange}
-            className="form-control"
+            className="form-input"
           />
         </div>
         
         <div className="form-group">
-          <label>Administrativo</label>
+          <label className="form-label">Administrativo</label>
           <input
             type="number"
             name="administrativo"
             min="0"
             value={formData.administrativo}
             onChange={handleInputChange}
-            className="form-control"
+            className="form-input"
           />
         </div>
 
         {atendimentosTipos.map((tipo) => (
           <div key={tipo.id} className="form-group">
-            <label>{tipo.label}</label>
+            <label className="form-label">{tipo.label}</label>
             <input
               type="number"
               name={tipo.id}
               min="0"
               value={formData[tipo.id]}
               onChange={handleInputChange}
-              className="form-control"
+              className="form-input"
             />
           </div>
         ))}
@@ -281,13 +281,13 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
         {formData.parceiros.map((parceiro, index) => (
           <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Nome do Parceiro {index + 1}</label>
+              <label className="form-label">Nome do Parceiro {index + 1}</label>
               <input
                 type="text"
                 value={parceiro.nome}
                 onChange={(e) => handleParceiroChange(index, 'nome', e.target.value)}
                 placeholder="Ex: Equatorial"
-                className="form-control"
+                className="form-input"
               />
               {formData.parceiros.length > 1 && (
                 <button 
@@ -300,13 +300,13 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
               )}
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Quantidade</label>
+              <label className="form-label">Quantidade</label>
               <input
                 type="number"
                 min="0"
                 value={parceiro.quantidade}
                 onChange={(e) => handleParceiroChange(index, 'quantidade', e.target.value)}
-                className="form-control"
+                className="form-input"
               />
             </div>
           </div>
@@ -327,9 +327,10 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
         <h3 style={{ color: '#475569', marginBottom: '0.5rem' }}>SOMATÓRIO DESTE DIA: {totalGeral}</h3>
       </div>
 
-      <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: '2rem' }}>
+      <button type="submit" className="btn btn-success" disabled={loading} style={{ marginTop: '2rem' }}>
         {loading ? 'Salvando...' : (isEditing ? 'Atualizar Parcial' : 'Registrar Parcial do Dia')}
       </button>
     </form>
   );
 }
+
