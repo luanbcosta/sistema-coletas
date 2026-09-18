@@ -58,6 +58,7 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [uniqueAcoes, setUniqueAcoes] = useState([]);
+  const [isNewAcao, setIsNewAcao] = useState(false);
 
   useEffect(() => {
     // Fetch distinct actions for autocomplete
@@ -69,6 +70,7 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
           // Group by acao_social to get distinct and their responsavel
           const acoesMap = {};
           data.forEach(c => {
+             if (c.is_finalizada === 1) return;
              if (!acoesMap[c.acao_social]) {
                 acoesMap[c.acao_social] = c.responsavel;
              }
@@ -145,7 +147,7 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, total: totalGeral }),
       });
 
       if (!response.ok) {
@@ -189,19 +191,42 @@ export default function ColetaForm({ initialData = null, onSuccess }) {
 
       <div className="form-group">
         <label className="form-label">Ação Social</label>
-        <input
-          type="text"
-          name="acao_social"
-          value={formData.acao_social}
-          onChange={handleInputChange}
-          required
-          placeholder="Nome da Ação"
-          className="form-input"
-          list="acoes-list"
-        />
-        <datalist id="acoes-list">
-          {uniqueAcoes.map((a, i) => <option key={i} value={a.acao} />)}
-        </datalist>
+        {isEditing ? (
+           <input type="text" className="form-input" disabled value={formData.acao_social} />
+        ) : (
+           <select
+             className="form-input"
+             value={isNewAcao ? '+nova' : (uniqueAcoes.some(a => a.acao === formData.acao_social) ? formData.acao_social : (formData.acao_social ? '+nova' : ''))}
+             onChange={(e) => {
+                if (e.target.value === '+nova') {
+                   setIsNewAcao(true);
+                   handleInputChange({ target: { name: 'acao_social', value: '', type: 'text' } });
+                   handleInputChange({ target: { name: 'responsavel', value: '', type: 'text' } });
+                } else {
+                   setIsNewAcao(false);
+                   handleInputChange({ target: { name: 'acao_social', value: e.target.value, type: 'text' } });
+                }
+             }}
+             required={!isNewAcao}
+           >
+             <option value="" disabled>Selecione uma Ação em Andamento</option>
+             <option value="+nova" style={{fontWeight: 'bold', color: '#10b981'}}>+ Criar Nova Ação Social</option>
+             {uniqueAcoes.map((a, i) => <option key={i} value={a.acao}>{a.acao}</option>)}
+           </select>
+        )}
+        
+        {(!isEditing && isNewAcao) && (
+          <input
+            type="text"
+            name="acao_social"
+            value={formData.acao_social}
+            onChange={handleInputChange}
+            required
+            placeholder="Digite o Nome da Nova Ação"
+            className="form-input"
+            style={{ marginTop: '0.5rem', border: '2px solid #10b981' }}
+          />
+        )}
       </div>
 
       <div className="form-group">

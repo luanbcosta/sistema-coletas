@@ -104,6 +104,23 @@ export default function Dashboard() {
     }
   };
 
+  const handleFinalizarAcao = async (acao_social) => {
+    if (!window.confirm(`Tem certeza que deseja encerrar a ação "${acao_social}"? Ela não aparecerá mais no formulário para novos registros.`)) return;
+    try {
+        const res = await fetch('/api/coletas/finalizar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao_social })
+        });
+        if (!res.ok) throw new Error('Falha ao encerrar a ação');
+        alert('Ação encerrada com sucesso!');
+        fetchDados();
+        setSelectedAcao(null);
+    } catch (err) {
+        alert(err.message);
+    }
+  };
+
   const printModal = () => {
     document.body.classList.add('printing-modal');
     window.print();
@@ -326,6 +343,9 @@ export default function Dashboard() {
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ color: 'var(--primary-blue)', margin: 0 }}>Resumo da Ação</h2>
+              <button className="btn no-print" style={{ backgroundColor: '#ef4444', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => handleFinalizarAcao(selectedAcao.acao_social)}>
+                Encerrar Ação
+              </button>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
