@@ -136,6 +136,30 @@ export default function Dashboard() {
     });
   };
 
+  const handleExcluirAcao = async (acao_social) => {
+    setCustomAlert({
+      type: 'confirm',
+      title: 'Excluir Ação Inteira',
+      message: `Tem certeza que deseja excluir completamente a ação "${acao_social}" E todos os seus dias registrados? Essa operação NÃO pode ser desfeita.`,
+      onConfirm: async () => {
+        setCustomAlert(null);
+        try {
+            const res = await fetch('/api/acoes/excluir', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao_social })
+            });
+            if (!res.ok) throw new Error('Falha ao excluir a ação');
+            setCustomAlert({ type: 'alert', title: 'Sucesso', message: 'Ação inteira e seus dias foram excluídos!' });
+            fetchDados();
+            setSelectedAcao(null);
+        } catch (err) {
+            setCustomAlert({ type: 'alert', title: 'Erro', message: err.message });
+        }
+      }
+    });
+  };
+
   const printModal = () => {
     document.body.classList.add('printing-modal');
     window.print();
@@ -375,11 +399,16 @@ export default function Dashboard() {
                 Resumo da Ação
                 {selectedAcao.is_finalizada && <span style={{backgroundColor: "#ef4444", color: "white", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.8rem", marginLeft: "0.5rem", letterSpacing: '0.05em'}}>ENCERRADA</span>}
               </h2>
-              {!selectedAcao.is_finalizada && (
-                <button className="btn no-print" style={{ backgroundColor: '#ef4444', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => handleFinalizarAcao(selectedAcao.acao_social)}>
-                  Encerrar Ação
+              <div style={{ display: 'flex', gap: '0.5rem' }} className="no-print">
+                <button className="btn" style={{ backgroundColor: '#dc2626', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => handleExcluirAcao(selectedAcao.acao_social)}>
+                  Excluir Ação
                 </button>
-              )}
+                {!selectedAcao.is_finalizada && (
+                  <button className="btn" style={{ backgroundColor: '#f59e0b', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => handleFinalizarAcao(selectedAcao.acao_social)}>
+                    Encerrar Ação
+                  </button>
+                )}
+              </div>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
