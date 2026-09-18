@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [customAlert, setCustomAlert] = useState(null);
   const fileInputRef = useRef(null);
 
   const fetchDados = async () => {
@@ -52,12 +53,14 @@ export default function Dashboard() {
          if(!grupos[key]) {
             grupos[key] = {
                acao_social: key,
+               is_finalizada: false,
                responsavel: c.responsavel,
                dias: [],
                total: 0
             };
          }
          grupos[key].dias.push(c);
+         if (c.is_finalizada === 1) grupos[key].is_finalizada = true;
          grupos[key].total += c.total;
       });
       // Order groups by latest date of its partials
@@ -88,37 +91,49 @@ export default function Dashboard() {
   }, []);
 
   const handleDeleteParcial = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir o registro deste dia? Essa ação não pode ser desfeita.')) return;
-    
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/coletas/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Falha ao excluir');
-      
-      await fetchDados();
-      setSelectedParcial(null);
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setDeleting(false);
-    }
+    setCustomAlert({
+      type: 'confirm',
+      title: 'Excluir Registro',
+      message: 'Tem certeza que deseja excluir o registro deste dia? Essa ação não pode ser desfeita.',
+      onConfirm: async () => {
+        setCustomAlert(null);
+        setDeleting(true);
+        try {
+          const res = await fetch(`/api/coletas/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('Falha ao excluir');
+          await fetchDados();
+          setSelectedParcial(null);
+        } catch (err) {
+          setCustomAlert({ type: 'alert', title: 'Erro', message: err.message });
+        } finally {
+          setDeleting(false);
+        }
+      }
+    });
   };
 
   const handleFinalizarAcao = async (acao_social) => {
-    if (!window.confirm(`Tem certeza que deseja encerrar a ação "${acao_social}"? Ela não aparecerá mais no formulário para novos registros.`)) return;
-    try {
-        const res = await fetch('/api/coletas/finalizar', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ acao_social })
-        });
-        if (!res.ok) throw new Error('Falha ao encerrar a ação');
-        alert('Ação encerrada com sucesso!');
-        fetchDados();
-        setSelectedAcao(null);
-    } catch (err) {
-        alert(err.message);
-    }
+    setCustomAlert({
+      type: 'confirm',
+      title: 'Encerrar Ação',
+      message: `Tem certeza que deseja encerrar a ação "${acao_social}"? Ela não aparecerá mais no formulário para novos registros.`,
+      onConfirm: async () => {
+        setCustomAlert(null);
+        try {
+            const res = await fetch('/api/coletas/finalizar', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao_social })
+            });
+            if (!res.ok) throw new Error('Falha ao encerrar a ação');
+            setCustomAlert({ type: 'alert', title: 'Sucesso', message: 'Ação encerrada com sucesso!' });
+            fetchDados();
+            setSelectedAcao(null);
+        } catch (err) {
+            setCustomAlert({ type: 'alert', title: 'Erro', message: err.message });
+        }
+      }
+    });
   };
 
   const printModal = () => {
@@ -149,7 +164,7 @@ export default function Dashboard() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Erro ao gerar backup: ' + err.message);
+      setCustomAlert({ type: 'alert', title: 'Erro', message: 'Erro ao gerar backup: ' + err.message });
     }
   };
 
@@ -162,32 +177,43 @@ export default function Dashboard() {
       try {
         const data = JSON.parse(event.target.result);
         if (!Array.isArray(data)) throw new Error("Formato inválido. O arquivo deve conter uma lista de coletas.");
-        if (!window.confirm(`Você está prestes a restaurar ${data.length} coletas. Para evitar dados duplicados, importe apenas se o sistema estiver vazio ou dados estiverem faltando. Continuar?`)) return;
         
-        setLoading(true);
-        let restoredCount = 0;
-        for (const item of data) {
-          const { id, created_at, ...payload } = item;
-          if (payload.parceiros_dados) {
-             try { payload.parceiros = JSON.parse(payload.parceiros_dados); } 
-             catch(err) { payload.parceiros = []; }
-          } else {
-             payload.parceiros = [];
+        setCustomAlert({
+          type: 'confirm',
+          title: 'Restaurar Backup',
+          message: `Você está prestes a restaurar ${data.length} coletas. Para evitar dados duplicados, importe apenas se o sistema estiver vazio ou dados estiverem faltando. Continuar?`,
+          onConfirm: async () => {
+            setCustomAlert(null);
+            setLoading(true);
+            let restoredCount = 0;
+            try {
+              for (const item of data) {
+                const { id, created_at, ...payload } = item;
+                if (payload.parceiros_dados) {
+                   try { payload.parceiros = JSON.parse(payload.parceiros_dados); } 
+                   catch(err) { payload.parceiros = []; }
+                } else {
+                   payload.parceiros = [];
+                }
+                
+                const res = await fetch('/api/coletas', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                if(res.ok) restoredCount++;
+              }
+              setCustomAlert({ type: 'alert', title: 'Sucesso', message: `Restauração concluída! ${restoredCount} parciais importadas.` });
+              fetchDados();
+            } catch (err) {
+              setCustomAlert({ type: 'alert', title: 'Erro', message: 'Erro ao importar backup: ' + err.message });
+            } finally {
+              setLoading(false);
+            }
           }
-          
-          const res = await fetch('/api/coletas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if(res.ok) restoredCount++;
-        }
-        alert(`Restauração concluída! ${restoredCount} parciais importadas.`);
-        fetchDados();
+        });
       } catch (err) {
-        alert('Erro ao importar backup: ' + err.message);
-      } finally {
-        setLoading(false);
+        setCustomAlert({ type: 'alert', title: 'Erro', message: 'Erro ao ler arquivo: ' + err.message });
       }
     };
     reader.readAsText(file);
@@ -321,7 +347,10 @@ export default function Dashboard() {
               <tbody>
                 {acoesAgrupadas.map((acao, idx) => (
                   <tr key={idx} className="clickable-row" onClick={() => { setSelectedAcao(acao); }}>
-                    <td>{acao.acao_social}</td>
+                    <td>
+                      {acao.acao_social}
+                      {acao.is_finalizada && <span style={{backgroundColor: "#ef4444", color: "white", padding: "0.2rem 0.5rem", borderRadius: "12px", fontSize: "0.7rem", marginLeft: "0.5rem", fontWeight: "bold"}}>ENCERRADA</span>}
+                    </td>
                     <td>{acao.responsavel}</td>
                     <td>{acao.dias.length} dia(s)</td>
                     <td style={{ fontWeight: 'bold', color: 'var(--primary-green)' }}>
@@ -341,11 +370,16 @@ export default function Dashboard() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setSelectedAcao(null)}>&times;</button>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ color: 'var(--primary-blue)', margin: 0 }}>Resumo da Ação</h2>
-              <button className="btn no-print" style={{ backgroundColor: '#ef4444', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => handleFinalizarAcao(selectedAcao.acao_social)}>
-                Encerrar Ação
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <h2 style={{ color: 'var(--primary-blue)', margin: 0, display: 'flex', alignItems: 'center' }}>
+                Resumo da Ação
+                {selectedAcao.is_finalizada && <span style={{backgroundColor: "#ef4444", color: "white", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.8rem", marginLeft: "0.5rem", letterSpacing: '0.05em'}}>ENCERRADA</span>}
+              </h2>
+              {!selectedAcao.is_finalizada && (
+                <button className="btn no-print" style={{ backgroundColor: '#ef4444', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => handleFinalizarAcao(selectedAcao.acao_social)}>
+                  Encerrar Ação
+                </button>
+              )}
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
@@ -361,9 +395,11 @@ export default function Dashboard() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
               <h4 style={{ margin: 0, color: 'var(--text-dark)' }}>Parciais (Dias Registrados)</h4>
-              <button onClick={() => setIsAddingMode(true)} className="btn no-print" style={{ backgroundColor: '#10b981', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
-                + Adicionar Novo Dia
-              </button>
+              {!selectedAcao.is_finalizada && (
+                <button onClick={() => setIsAddingMode(true)} className="btn no-print" style={{ backgroundColor: '#10b981', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}>
+                  + Adicionar Novo Dia
+                </button>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
@@ -519,6 +555,42 @@ export default function Dashboard() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Custom Alert Modal */}
+      {customAlert && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <h3 style={{ color: customAlert.title === 'Erro' ? '#ef4444' : 'var(--primary-blue)', marginBottom: '1rem' }}>
+              {customAlert.title}
+            </h3>
+            <p style={{ marginBottom: '2rem', color: '#475569' }}>{customAlert.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+              {customAlert.type === 'confirm' && (
+                <button 
+                  className="btn" 
+                  style={{ backgroundColor: '#64748b' }} 
+                  onClick={() => setCustomAlert(null)}
+                >
+                  Cancelar
+                </button>
+              )}
+              <button 
+                className="btn btn-success" 
+                style={{ backgroundColor: customAlert.type === 'confirm' ? '#ef4444' : '#10b981', margin: 0, width: 'auto' }} 
+                onClick={() => {
+                  if (customAlert.type === 'confirm') {
+                    customAlert.onConfirm();
+                  } else {
+                    setCustomAlert(null);
+                  }
+                }}
+              >
+                {customAlert.type === 'confirm' ? 'Confirmar' : 'OK'}
+              </button>
+            </div>
           </div>
         </div>
       )}
